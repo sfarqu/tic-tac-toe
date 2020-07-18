@@ -1,4 +1,5 @@
 use std::io;
+use colored::*;
 
 struct Player {
     name: String,
@@ -12,7 +13,7 @@ fn main() {
     let current_player = &player1;
     loop {
         draw_grid(grid);
-        println!("{}: enter a move: ", current_player.name);
+        println!("{}: enter a move: ", current_player.name.blue());
         io::stdin().read_line(&mut input);
         let result = match input.to_uppercase().trim() {
             "A1"|"A2"|"A3"| // surely there's a better way to do this?
@@ -20,7 +21,7 @@ fn main() {
             "C1"|"C2"|"C3" => game(input.to_uppercase().trim(), &mut grid, current_player),
             "Q" => false,
             n @ _ => {
-                println!("Invalid move {}!", n);
+                println!("{} {}", "Invalid move".red(), n.purple());
                 true
             }
         };
@@ -45,9 +46,8 @@ fn game(mv: &str, grid: &mut [[char; 3]; 3], player: &Player) -> bool {
         ' ' => {
             grid[indexes[0]][indexes[1]] = player.mark
         },
-        _ => return false
+        _ => println!("{} {}", "Invalid move".red(), mv.purple())
     }
-    println!("{} placed an {} on {}", player.name, player.mark, mv);
     return true;
 }
 
