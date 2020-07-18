@@ -6,11 +6,18 @@ struct Player {
     mark: char,
 }
 
+enum Turn {
+    Next,
+    Invalid,
+    Quit
+}
+
 fn main() {
     let mut grid:[[char; 3]; 3] = [[' '; 3]; 3];
     let mut input = String::new();
     let player1: Player = Player{name: "Player 1".to_string(), mark: 'X'};
-    let current_player = &player1;
+    let player2: Player = Player{name: "Player 2".to_string(), mark: 'O'};
+    let mut current_player = &player1;
     loop {
         draw_grid(grid);
         println!("{}: enter a move: ", current_player.name.blue());
@@ -19,19 +26,21 @@ fn main() {
             "A1"|"A2"|"A3"| // surely there's a better way to do this?
             "B1"|"B2"|"B3"|
             "C1"|"C2"|"C3" => game(input.to_uppercase().trim(), &mut grid, current_player),
-            "Q" => false,
-            n @ _ => {
-                println!("{} {}", "Invalid move".red(), n.purple());
-                true
-            }
+            "Q" => Turn::Quit,
+            _ => Turn::Invalid
         };
-        if !result { break }
+        match result {
+            Turn::Invalid => println!("{} {}", "Invalid move".red(), input.to_uppercase().trim().purple()),
+            Turn::Quit => break,
+            Turn::Next => current_player = if current_player.name == player1.name { &player2 } else { &player1 }
+        }
         input = "".to_string(); // This seems hacky, is there a more idiomatic way to overwrite values with read_line?
+
     }
 }
 
 // Check if move is valid, then update grid
-fn game(mv: &str, grid: &mut [[char; 3]; 3], player: &Player) -> bool {
+fn game(mv: &str, grid: &mut [[char; 3]; 3], player: &Player) -> Turn {
     let mut indexes = Vec::new();
     for ch in mv.chars() {
         let i = match ch {
@@ -44,11 +53,11 @@ fn game(mv: &str, grid: &mut [[char; 3]; 3], player: &Player) -> bool {
     }
     match grid[indexes[0]][indexes[1]] {
         ' ' => {
-            grid[indexes[0]][indexes[1]] = player.mark
+            grid[indexes[0]][indexes[1]] = player.mark;
+            return Turn::Next
         },
-        _ => println!("{} {}", "Invalid move".red(), mv.purple())
+        _ => return Turn::Invalid
     }
-    return true;
 }
 
 fn draw_grid(grid: [[char; 3]; 3]) {
