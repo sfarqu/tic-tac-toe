@@ -17,19 +17,21 @@ fn main() {
     println!();
 
     let mut grid:[[char; 3]; 3] = [[' '; 3]; 3];
-    let mut input = String::new();
+    let mut input = String::new(); // is it better to declare in loop or reuse mut here?
     let players = [
         Player{name: "Player 1".to_string(), mark: 'X'},
         Player{name: "Player 2".to_string(), mark: 'O'}
     ];
     let mut current = 0;
+    let mut turns = 0;
 
     menu();
 
     loop {
         draw_grid(grid);
-        println!("{}: enter a move: ", players[current].name.blue());
+        println!("{} enter a move: ", players[current].name.blue());
         io::stdin().read_line(&mut input);
+        // evaluate player input
         let result = match input.to_uppercase().trim() {
             "A1"|"A2"|"A3"| // surely there's a better way to do this?
             "B1"|"B2"|"B3"|
@@ -37,14 +39,24 @@ fn main() {
             "Q" => Turn::Quit,
             _ => Turn::Invalid
         };
+        // determine whether turn is over
         match result {
             Turn::Invalid => println!("{} {}", "Invalid move".red(), input.to_uppercase().trim().purple()),
             Turn::Quit => break,
-            Turn::Next => current = if current == 0 { 1 } else { 0 }
+            Turn::Next => {
+                current = if current == 0 { 1 } else { 0 };
+                turns = turns + 1;
+            }
         }
+        // check for winner
         if let Some(winner) = get_winner(check_game_over(grid), &players) {
             println!("{}", format!("{} {}", winner.name, "wins!").black().on_green());
             draw_grid(grid);
+            break
+        }
+        // if board is full, end game
+        if turns >= 9 {
+            println!("{}", format!("{}", "  Draw  ".black().on_magenta()));
             break
         }
         input = "".to_string(); // This seems hacky, is there a more idiomatic way to overwrite values with read_line?
@@ -55,7 +67,7 @@ fn menu() {
     println!("To play: specify your move with a letter for the row, and a number for the column");
     println!("Example: {}", "B2".purple());
     println!();
-    println!("Press any key to start a new game");
+    println!("Press enter to start a new game");
     let mut key = String::new();
     io::stdin().read_line(&mut key);
     println!();
@@ -121,9 +133,9 @@ fn check_game_over(grid: [[char; 3]; 3]) -> char {
 /**
 * Identify winning player based on who was X or O
 */
-fn get_winner<'a>(mark: char, players: &'a [Player; 2]) -> Option<&'a Player> {
+fn get_winner<'a,'b>(mark: &'b char, players: &'a [Player; 2]) -> Option<&'a Player> {
     for player in players.iter() {
-        if player.mark == mark { return Some(player); }
+        if player.mark == *mark { return Some(player); }
     }
     None
 }
