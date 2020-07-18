@@ -1,44 +1,53 @@
 use std::io;
 
+struct Player {
+    name: String,
+    mark: char,
+}
+
 fn main() {
     let mut grid:[[char; 3]; 3] = [[' '; 3]; 3];
     let mut input = String::new();
+    let player1: Player = Player{name: "Player 1".to_string(), mark: 'X'};
+    let current_player = &player1;
     loop {
         draw_grid(grid);
-        println!("Enter a move: ");
+        println!("{}: enter a move: ", current_player.name);
         io::stdin().read_line(&mut input);
         let result = match input.to_uppercase().trim() {
-            "A1"|"A2"|"A3"|
+            "A1"|"A2"|"A3"| // surely there's a better way to do this?
             "B1"|"B2"|"B3"|
-            "C1"|"C2"|"C3" => game(input.to_uppercase().trim(), &mut grid),
+            "C1"|"C2"|"C3" => game(input.to_uppercase().trim(), &mut grid, current_player),
+            "Q" => false,
             n @ _ => {
-                println!("Invalid move {}! {}", n, n.len());
-                false
+                println!("Invalid move {}!", n);
+                true
             }
         };
         if !result { break }
-        input = "".to_string();
+        input = "".to_string(); // This seems hacky, is there a more idiomatic way to overwrite values with read_line?
     }
 }
 
-fn game(mv: &str, grid: &mut [[char; 3]; 3]) -> bool {
+// Check if move is valid, then update grid
+fn game(mv: &str, grid: &mut [[char; 3]; 3], player: &Player) -> bool {
     let mut indexes = Vec::new();
     for ch in mv.chars() {
         let i = match ch {
             'A'|'1' => 0,
             'B'|'2' => 1,
             'C'|'3' => 2,
-            _ => 3
+            _ => break // shouldn't happen?
         };
         indexes.push(i);
     }
     match grid[indexes[0]][indexes[1]] {
         ' ' => {
-            grid[indexes[0]][indexes[1]] = 'X'
+            grid[indexes[0]][indexes[1]] = player.mark
         },
         _ => return false
     }
-    println!("You placed an X on {}", mv);
+    println!("{} placed an {} on {}", player.name, player.mark, mv);
     return true;
 }
 
