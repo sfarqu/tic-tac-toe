@@ -13,33 +13,57 @@ enum Turn {
 }
 
 fn main() {
+    println!("{}", "  Tic-Tac-Toe  ".black().on_cyan());
+    println!();
+
     let mut grid:[[char; 3]; 3] = [[' '; 3]; 3];
     let mut input = String::new();
-    let player1: Player = Player{name: "Player 1".to_string(), mark: 'X'};
-    let player2: Player = Player{name: "Player 2".to_string(), mark: 'O'};
-    let mut current_player = &player1;
+    let players = [
+        Player{name: "Player 1".to_string(), mark: 'X'},
+        Player{name: "Player 2".to_string(), mark: 'O'}
+    ];
+    let mut current = 0;
+
+    menu();
+
     loop {
         draw_grid(grid);
-        println!("{}: enter a move: ", current_player.name.blue());
+        println!("{}: enter a move: ", players[current].name.blue());
         io::stdin().read_line(&mut input);
         let result = match input.to_uppercase().trim() {
             "A1"|"A2"|"A3"| // surely there's a better way to do this?
             "B1"|"B2"|"B3"|
-            "C1"|"C2"|"C3" => game(input.to_uppercase().trim(), &mut grid, current_player),
+            "C1"|"C2"|"C3" => game(input.to_uppercase().trim(), &mut grid, &players[current]),
             "Q" => Turn::Quit,
             _ => Turn::Invalid
         };
         match result {
             Turn::Invalid => println!("{} {}", "Invalid move".red(), input.to_uppercase().trim().purple()),
             Turn::Quit => break,
-            Turn::Next => current_player = if current_player.name == player1.name { &player2 } else { &player1 }
+            Turn::Next => current = if current == 0 { 1 } else { 0 }
+        }
+        if let Some(winner) = get_winner(check_game_over(grid), &players) {
+            println!("{}", format!("{} {}", winner.name, "wins!").black().on_green());
+            draw_grid(grid);
+            break
         }
         input = "".to_string(); // This seems hacky, is there a more idiomatic way to overwrite values with read_line?
-
     }
 }
 
-// Check if move is valid, then update grid
+fn menu() {
+    println!("To play: specify your move with a letter for the row, and a number for the column");
+    println!("Example: {}", "B2".purple());
+    println!();
+    println!("Press any key to start a new game");
+    let mut key = String::new();
+    io::stdin().read_line(&mut key);
+    println!();
+}
+
+/**
+ * Check if move is on an empty space, if so update board
+ */
 fn game(mv: &str, grid: &mut [[char; 3]; 3], player: &Player) -> Turn {
     let mut indexes = Vec::new();
     for ch in mv.chars() {
@@ -67,4 +91,39 @@ fn draw_grid(grid: [[char; 3]; 3]) {
     println!("B  {} | {} | {}", grid[1][0], grid[1][1], grid[1][2]);
     println!("  ---+---+---");
     println!("C  {} | {} | {}", grid[2][0], grid[2][1], grid[2][2]);
+}
+
+/**
+ * Brute force looking for 3-in-a-row
+*/
+fn check_game_over(grid: [[char; 3]; 3]) -> char {
+    let empty = ' ';
+    for i in 0..3 {
+        // check rows
+        if grid[i][0] != empty && (grid[i][0], grid[i][1]) == (grid[i][1], grid[i][2]) {
+            return grid[i][0]
+        }
+        // check columns
+        if grid[0][1] != empty && (grid[0][i], grid[1][i]) == (grid[1][i], grid[2][i]) {
+            return grid[0][i]
+        }
+    }
+    // check diagonals
+    if grid[0][0] != empty && (grid[0][0], grid[1][1]) == (grid[1][1], grid[2][2]) {
+        return grid[1][1]
+    }
+    if grid[2][0] != empty && (grid[2][0], grid[1][1]) == (grid[1][1], grid[0][2]) {
+        return grid[1][1]
+    }
+    empty
+}
+
+/**
+* Identify winning player based on who was X or O
+*/
+fn get_winner<'a>(mark: char, players: &'a [Player; 2]) -> Option<&'a Player> {
+    for player in players.iter() {
+        if player.mark == mark { return Some(player); }
+    }
+    None
 }
