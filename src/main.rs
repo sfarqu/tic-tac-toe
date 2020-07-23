@@ -49,7 +49,7 @@ fn main() {
             }
         }
         // check for winner
-        if let Some(winner) = get_winner(check_game_over(grid), &players) {
+        if let Some(winner) = get_winner(&check_game_over(grid), &players) {
             println!("{}", format!("{} {}", winner.name, "wins!").black().on_green());
             draw_grid(grid);
             break
